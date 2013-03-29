@@ -12,6 +12,7 @@ License:        MIT
 
 use com\google\i18n\phonenumbers\PhoneNumberUtil;
 use com\google\i18n\phonenumbers\PhoneNumberFormat;
+use com\google\i18n\phonenumbers\PhoneNumberType;
 use com\google\i18n\phonenumbers\NumberParseException;
 
 require_once plugin_dir_path( __FILE__ ) . '/libphonenumber/PhoneNumberUtil.php';
@@ -108,14 +109,12 @@ class WP_Phone_Number {
 
 	public function create_format_type_field() {
 		$options = get_option( 'wp_phone_number_settings' );
-		$phone_util = PhoneNumberUtil::getInstance();
 		if(isset($options['wp_phone_number_format']))
 			$format = intval( $options['wp_phone_number_format'] );
 		else
 			$format = PhoneNumberFormat::INTERNATIONAL;
 		$options = get_option( 'wp_phone_number_settings' );
 		$region = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : null;
-		$input = $phone_util->format( $phone_util->getExampleNumber( $region ), PhoneNumberFormat::INTERNATIONAL );
 		?>
 		<select id="wp_phone_number_format" name="wp_phone_number_settings[wp_phone_number_format]">
 			<option <?php echo ( $format === PhoneNumberFormat::E164 ? 'selected' : '' ); ?> value="<?php echo PhoneNumberFormat::E164 ?>">E.164</option>
@@ -123,19 +122,32 @@ class WP_Phone_Number {
 			<option <?php echo ( $format === PhoneNumberFormat::NATIONAL ? 'selected' : '' ); ?> value="<?php echo PhoneNumberFormat::NATIONAL ?>">National</option>
 			<option <?php echo ( $format === PhoneNumberFormat::RFC3966 ? 'selected' : '' ); ?> value="<?php echo PhoneNumberFormat::RFC3966 ?>">RFC 3966</option>
 		</select>
-		<p style="display:inline" id="wp_phone_number_format_example"><?php _e( 'Example', 'wp-phone-number' ) ?>:
-			<span class="example" <?php echo ( $format !== PhoneNumberFormat::E164 ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::E164; ?>"><?php echo $this->format_phone_number( $input, null, PhoneNumberFormat::E164 ); ?></span>
-			<span class="example" <?php echo ( $format !== PhoneNumberFormat::INTERNATIONAL ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::INTERNATIONAL; ?>"><?php echo $this->format_phone_number( $input, null, PhoneNumberFormat::INTERNATIONAL ); ?></span>
-			<span class="example" <?php echo ( $format !== PhoneNumberFormat::NATIONAL ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::NATIONAL; ?>">
-				<?php echo $this->format_phone_number( $input, $options['wp_phone_number_region'], PhoneNumberFormat::NATIONAL ); ?>
-				<?php
-				printf( 
-					__( 'Current region: %s', 'wp-phone-number' ), 
-					( is_null( $region ) ? __( 'Please select a region above and save it!', 'wp-phone-number' ) : $region )
-				);
-				?>
+		<?php
+		$this->generate_examples( $format, $region );
+	}
+
+	private function generate_examples( $format, $region ) {
+		$phone_util = PhoneNumberUtil::getInstance();
+		$input_fixed = $phone_util->format( $phone_util->getExampleNumberForType( $region, PhoneNumberType::FIXED_LINE ), PhoneNumberFormat::INTERNATIONAL );
+		$input_mobile = $phone_util->format( $phone_util->getExampleNumberForType( $region, PhoneNumberType::MOBILE ), PhoneNumberFormat::INTERNATIONAL );
+		?>
+		<p style="" id="wp_phone_number_format_example">
+			<span class="example" <?php echo ( $format !== PhoneNumberFormat::E164 ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::E164; ?>">
+				<?php _e( 'Example fixed line:', 'wp-phone-number' ); ?> <?php echo $this->format_phone_number( $input_fixed, null, PhoneNumberFormat::E164, false ); ?><br>
+				<?php _e( 'Example mobile:', 'wp-phone-number' ); ?> <?php echo $this->format_phone_number( $input_mobile, null, PhoneNumberFormat::E164, false ); ?>
 			</span>
-			<span class="example" <?php echo ( $format !== PhoneNumberFormat::RFC3966 ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::RFC3966; ?>"><?php echo $this->format_phone_number( $input, null, PhoneNumberFormat::RFC3966 ); ?></span>
+			<span class="example" <?php echo ( $format !== PhoneNumberFormat::INTERNATIONAL ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::INTERNATIONAL; ?>">
+				<?php _e( 'Example fixed line:', 'wp-phone-number' ); ?> <?php echo $this->format_phone_number( $input_fixed, null, PhoneNumberFormat::INTERNATIONAL, false ); ?><br>
+				<?php _e( 'Example mobile:', 'wp-phone-number' ); ?> <?php echo $this->format_phone_number( $input_mobile, null, PhoneNumberFormat::INTERNATIONAL, false ); ?>
+			</span>
+			<span class="example" <?php echo ( $format !== PhoneNumberFormat::NATIONAL ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::NATIONAL; ?>">
+				<?php _e( 'Example fixed line:', 'wp-phone-number' ); ?> <?php echo $this->format_phone_number( $input_fixed, null, PhoneNumberFormat::NATIONAL, false ); ?><br>
+				<?php _e( 'Example mobile:', 'wp-phone-number' ); ?> <?php echo $this->format_phone_number( $input_mobile, null, PhoneNumberFormat::NATIONAL, false ); ?>
+			</span>
+			<span class="example" <?php echo ( $format !== PhoneNumberFormat::RFC3966 ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::RFC3966; ?>">
+				<?php _e( 'Example fixed line:', 'wp-phone-number' ); ?> <?php echo $this->format_phone_number( $input_fixed, null, PhoneNumberFormat::RFC3966, false ); ?><br>
+				<?php _e( 'Example mobile:', 'wp-phone-number' ); ?> <?php echo $this->format_phone_number( $input_mobile, null, PhoneNumberFormat::RFC3966, false ); ?>
+			</span>
 		</p>
 		<script>jQuery(document).ready(function($) {
 			$('#wp_phone_number_format').change(function() {
