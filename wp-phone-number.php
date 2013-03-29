@@ -76,12 +76,20 @@ class WP_Phone_Number {
 			'wp_phone_number',
 			'wp_phone_number_main'
 		);
+		add_settings_field(
+			'wp_phone_number_linkify',
+			'Turn phone numbers into links by default.',
+			array( $this, 'create_linkify_field' ),
+			'wp_phone_number',
+			'wp_phone_number_main'
+		);
 	}
 
 	public function create_region_field() {
 		require_once plugin_dir_path( __FILE__ ) . '/includes/countries.php';
 		$wppn_countries = wp_phone_number_get_countries();
 		$options = get_option( 'wp_phone_number_settings' );
+		$options['wp_phone_number_region'] = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : '';
 		echo '<select id="wp_phone_number_region" name="wp_phone_number_settings[wp_phone_number_region]">';
 		foreach( $wppn_countries as $country_code => $country ) {
 			$selected = ( $options['wp_phone_number_region'] === $country_code ) ? 'selected' : '';
@@ -90,13 +98,24 @@ class WP_Phone_Number {
 		echo '</select>';
 	}
 
+	public function create_linkify_field() {
+		$options = get_option( 'wp_phone_number_settings' );
+		$options['wp_phone_number_linkify'] = isset( $options['wp_phone_number_linkify'] ) ? $options['wp_phone_number_linkify'] : true;
+		?>
+		<input <?php echo ( $options['wp_phone_number_linkify'] ? 'checked' : '' ) ?> type="checkbox" name="wp_phone_number_settings[wp_phone_number_linkify]" value="true">
+		<?php
+	}
+
 	public function create_format_type_field() {
 		$options = get_option( 'wp_phone_number_settings' );
-		$input = '+15417543010';
+		$phone_util = PhoneNumberUtil::getInstance();
 		if(isset($options['wp_phone_number_format']))
 			$format = intval( $options['wp_phone_number_format'] );
 		else
 			$format = PhoneNumberFormat::INTERNATIONAL;
+		$options = get_option( 'wp_phone_number_settings' );
+		$region = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : null;
+		$input = $phone_util->format( $phone_util->getExampleNumber( $region ), PhoneNumberFormat::INTERNATIONAL );
 		?>
 		<select id="wp_phone_number_format" name="wp_phone_number_settings[wp_phone_number_format]">
 			<option <?php echo ( $format === PhoneNumberFormat::E164 ? 'selected' : '' ); ?> value="<?php echo PhoneNumberFormat::E164 ?>">E.164</option>
@@ -107,7 +126,15 @@ class WP_Phone_Number {
 		<p style="display:inline" id="wp_phone_number_format_example"><?php _e( 'Example', 'wp-phone-number' ) ?>:
 			<span class="example" <?php echo ( $format !== PhoneNumberFormat::E164 ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::E164; ?>"><?php echo $this->format_phone_number( $input, null, PhoneNumberFormat::E164 ); ?></span>
 			<span class="example" <?php echo ( $format !== PhoneNumberFormat::INTERNATIONAL ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::INTERNATIONAL; ?>"><?php echo $this->format_phone_number( $input, null, PhoneNumberFormat::INTERNATIONAL ); ?></span>
-			<span class="example" <?php echo ( $format !== PhoneNumberFormat::NATIONAL ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::NATIONAL; ?>"><?php echo $this->format_phone_number( $input, null, PhoneNumberFormat::NATIONAL ); ?></span>
+			<span class="example" <?php echo ( $format !== PhoneNumberFormat::NATIONAL ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::NATIONAL; ?>">
+				<?php echo $this->format_phone_number( $input, $options['wp_phone_number_region'], PhoneNumberFormat::NATIONAL ); ?>
+				<?php
+				printf( 
+					__( 'Current region: %s', 'wp-phone-number' ), 
+					( is_null( $region ) ? __( 'Please select a region above and save it!', 'wp-phone-number' ) : $region )
+				);
+				?>
+			</span>
 			<span class="example" <?php echo ( $format !== PhoneNumberFormat::RFC3966 ? 'style="display:none"' : '' ); ?> id="example-<?php echo PhoneNumberFormat::RFC3966; ?>"><?php echo $this->format_phone_number( $input, null, PhoneNumberFormat::RFC3966 ); ?></span>
 		</p>
 		<script>jQuery(document).ready(function($) {
@@ -147,7 +174,11 @@ class WP_Phone_Number {
 		$format = intval($input['wp_phone_number_format']);
 		if( $format > 3 || $format < 0)
 			$format = PhoneNumberFormat::INTERNATIONAL;
-
+		$input['wp_phone_number_format'] = $format;
+		
+		$linkify = $input['wp_phone_number_linkify'];
+		$linkify = ($linkify == 'true');
+		$input['wp_phone_number_linkify'] = $linkify;
 		return $input;
 	}
 	
@@ -193,13 +224,32 @@ class WP_Phone_Number {
 		} else {
 			$format = $options['wp_phone_number_format'];
 		}
-		return $this->format_phone_number( $input, $region, $format );
+		if ( isset( $attributes['linkify'] ) ) {
+			switch ( strtoupper( $attributes['linkify'] ) ) {
+				case 'YES':
+				case 'TRUE':
+				case '1':
+					$linkify = true;
+					break;
+				case 'NO':
+				case 'FALSE':
+				case '0':
+					$linkify = false;
+					break;
+				default:
+					$linkify = $options['wp_phone_number_linkify'];
+					break;
+			}
+		} else {
+			$linkify = $options['wp_phone_number_linkify'];
+		}
+		return $this->format_phone_number( $input, $region, $format, $linkify );
 	}
 
 	/**
 	 * Parse and format phone numbers
 	 */
-	private function format_phone_number( $input, $region = null, $formatting = PhoneNumberFormat::INTERNATIONAL ) {
+	private function format_phone_number( $input, $region = null, $formatting = PhoneNumberFormat::INTERNATIONAL, $linkify = true ) {
 		$phone_util = PhoneNumberUtil::getInstance();
 		try {
 			$phone_nr_proto = $phone_util->parseAndKeepRawInput($input, $region);
@@ -211,8 +261,18 @@ class WP_Phone_Number {
 			$this->log_error( __( 'Given phone number failed to validate.', 'wp-phone-number' ), $input, $region );
 			return $input;
 		}
+		if( $linkify )
+			return $this->linkify_phone_number( $phone_util, $phone_nr_proto, $formatting );
+		else
+			return $phone_util->format( $phone_nr_proto, $formatting );
+	}
 
-		return $phone_util->format( $phone_nr_proto, $formatting );
+	private function linkify_phone_number( $phone_util, $phone_nr_proto, $formatting ) {
+		return sprintf(
+			'<a class="phone_link" title="%1$s" href="%2$s">%1$s</a>',
+			$phone_util->format( $phone_nr_proto, $formatting ),
+			$phone_util->format( $phone_nr_proto, PhoneNumberFormat::E164 )
+		);
 	}
 
 	/**
