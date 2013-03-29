@@ -101,8 +101,8 @@ return array (
     ),
     2 => 
     array (
-      'pattern' => '(6)(\\d{8})',
-      'format' => '$1 $2',
+      'pattern' => '(6)(\\d{2})(\\d{2})(\\d{2})(\\d{2})',
+      'format' => '$1 $2 $3 $4 $5',
       'leadingDigitsPatterns' => 
       array (
         0 => '6[0-57-9]',

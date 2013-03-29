@@ -909,7 +909,7 @@ class PhoneNumberUtil {
 	 * @return bool
 	 */
 	private function parsePrefixAsIdd($iddPattern, &$number) {
-		$m = new Matcher($iddPattern, $number);
+		$m = new Matcher( preg_replace('/\s/', '', $iddPattern ), $number );
 		if ($m->lookingAt()) {
 			$matchEnd = $m->end();
 			// Only strip this if the first digit after the match is not a 0, since country calling codes
@@ -944,11 +944,11 @@ class PhoneNumberUtil {
 			return false;
 		}
 		// Attempt to parse the first digits as a national prefix.
-		$prefixMatcher = new Matcher($possibleNationalPrefix, $number);
+		$prefixMatcher = new Matcher( preg_replace( '/\s/', '', $possibleNationalPrefix ), $number );
 		if ($prefixMatcher->lookingAt()) {
 			$nationalNumberRule = $metadata->getGeneralDesc()->getNationalNumberPattern();
 			// Check if the original number is viable.
-			$nationalNumberRuleMatcher = new Matcher($nationalNumberRule, $number);
+			$nationalNumberRuleMatcher = new Matcher( preg_replace( '/\s/', '', $nationalNumberRule ), $number);
 			$isViableOriginalNumber = $nationalNumberRuleMatcher->matches();
 
 			// prefixMatcher.group(numOfGroups) == null implies nothing was captured by the capturing
@@ -959,7 +959,7 @@ class PhoneNumberUtil {
 			if ($transformRule == null || strlen($transformRule) == 0 ||
 				$prefixMatcher->group($numOfGroups) == null) {
 				// If the original number was viable, and the resultant number is not, we return.
-				$matcher = new Matcher($nationalNumberRule, substr($number, $prefixMatcher->end()));
+				$matcher = new Matcher( preg_replace( '/\s/', '', $nationalNumberRule ), substr($number, $prefixMatcher->end()));
 				if ($isViableOriginalNumber && !$matcher->matches()) {
 					return false;
 				}
@@ -1985,10 +1985,10 @@ class PhoneNumberUtil {
 			$size = $numFormat->leadingDigitsPatternSize();
 			// We always use the last leading_digits_pattern, as it is the most detailed.
 			if ($size > 0) {
-				$leadingDigitsPatternMatcher = new Matcher(preg_replace('/\s/', '', $numFormat->getLeadingDigitsPattern($size - 1)), $nationalNumber);
+				$leadingDigitsPatternMatcher = new Matcher( preg_replace( '/\s/', '', $numFormat->getLeadingDigitsPattern( $size - 1 ) ), $nationalNumber );
 			}
 			if ($size == 0 || $leadingDigitsPatternMatcher->lookingAt()) {
-				$m = new Matcher($numFormat->getPattern(), $nationalNumber);
+				$m = new Matcher( preg_replace( '/\s/', '', $numFormat->getPattern() ), $nationalNumber );
 				if ($m->matches() > 0) {
 					return $numFormat;
 				}
@@ -2001,7 +2001,7 @@ class PhoneNumberUtil {
 	// will take place.
 	private function formatNsnUsingPattern($nationalNumber, NumberFormat $formattingPattern, $numberFormat, $carrierCode = NULL) {
 		$numberFormatRule = $formattingPattern->getFormat();
-		$m = new Matcher($formattingPattern->getPattern(), $nationalNumber);
+		$m = new Matcher( preg_replace('/\s/', '', $formattingPattern->getPattern() ), $nationalNumber );
 		if ($numberFormat == PhoneNumberFormat::NATIONAL &&
 				$carrierCode != null && strlen($carrierCode) > 0 &&
 				strlen($formattingPattern->getDomesticCarrierCodeFormattingRule()) > 0) {
