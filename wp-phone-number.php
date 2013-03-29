@@ -104,7 +104,7 @@ class WP_Phone_Number {
 		$options['wp_phone_number_linkify'] = isset( $options['wp_phone_number_linkify'] ) ? $options['wp_phone_number_linkify'] : true;
 		?>
 		<input <?php echo ( $options['wp_phone_number_linkify'] ? 'checked' : '' ) ?> type="checkbox" name="wp_phone_number_settings[wp_phone_number_linkify]" value="true">
-		<?php
+		<?php _e( '(check to enable)', 'wp-phone-number' );
 	}
 
 	public function create_format_type_field() {

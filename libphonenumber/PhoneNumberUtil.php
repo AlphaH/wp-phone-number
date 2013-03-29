@@ -1678,7 +1678,6 @@ class PhoneNumberUtil {
 			$formattedNumber .= $nationalSignificantNumber;
 			return $formattedNumber;
 		}
-
 		$metadata = $this->getMetadataForRegionOrCallingCode($countryCallingCode, $regionCode);
 		$formattedNumber .= $this->formatNsn($nationalSignificantNumber, $metadata, $numberFormat);
 		$this->maybeAppendFormattedExtension($number, $metadata, $numberFormat, $formattedNumber);
@@ -1986,7 +1985,7 @@ class PhoneNumberUtil {
 			$size = $numFormat->leadingDigitsPatternSize();
 			// We always use the last leading_digits_pattern, as it is the most detailed.
 			if ($size > 0) {
-				$leadingDigitsPatternMatcher = new Matcher($numFormat->getLeadingDigitsPattern($size - 1), $nationalNumber);
+				$leadingDigitsPatternMatcher = new Matcher(preg_replace('/\s/', '', $numFormat->getLeadingDigitsPattern($size - 1)), $nationalNumber);
 			}
 			if ($size == 0 || $leadingDigitsPatternMatcher->lookingAt()) {
 				$m = new Matcher($numFormat->getPattern(), $nationalNumber);
