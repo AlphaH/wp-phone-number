@@ -90,6 +90,7 @@ class WP_Phone_Number {
 		require_once plugin_dir_path( __FILE__ ) . '/includes/countries.php';
 		$wppn_countries = wp_phone_number_get_countries();
 		$options = get_option( 'wp_phone_number_settings' );
+		$options['wp_phone_number_region'] = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : 'US';
 		$options['wp_phone_number_region'] = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : '';
 		echo '<select id="wp_phone_number_region" name="wp_phone_number_settings[wp_phone_number_region]">';
 		foreach( $wppn_countries as $country_code => $country ) {
@@ -114,7 +115,7 @@ class WP_Phone_Number {
 		else
 			$format = PhoneNumberFormat::INTERNATIONAL;
 		$options = get_option( 'wp_phone_number_settings' );
-		$region = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : null;
+		$region = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : 'US';
 		?>
 		<select id="wp_phone_number_format" name="wp_phone_number_settings[wp_phone_number_format]">
 			<option <?php echo ( $format === PhoneNumberFormat::E164 ? 'selected' : '' ); ?> value="<?php echo PhoneNumberFormat::E164 ?>">E.164</option>
