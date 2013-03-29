@@ -208,7 +208,7 @@ class WP_Phone_Number {
 			return $input;
 		}
 		if( ! $phone_util->isValidNumber( $phone_nr_proto ) ) {
-			log_error( __( 'Given phone number failed to validate.', 'wp-phone-number' ), $input, $region );
+			$this->log_error( __( 'Given phone number failed to validate.', 'wp-phone-number' ), $input, $region );
 			return $input;
 		}
 
