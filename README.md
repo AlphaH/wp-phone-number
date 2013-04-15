@@ -39,3 +39,11 @@ Available input  (not case sensitive)
 * Yes: `YES` `TRUE` `1`
 * No: `NO` `FALSE` `0`
 
+### Template tag
+```php
+wp_phone_number_parse( $input, $region = null, $format = null, $linkify = null )
+```
+- `$input` (string) The phone number you want to parse
+- `$region` (string) The [ISO 3166-1 alpha 2 country code](ftp://ftp.fu-berlin.de/doc/iso/iso3166-countrycodes.txt) that should be used by default when parsing non-international phone numbers. Defaults to the Wordpress settings.
+- `$format` (string) The format in which the phone numbers should be parsed (see "Available formats under **Shortcode**). Defaults to the Wordpress settings.
+- `$linkify` (boolean) Whether or not to turn phone numbers into links. Defaults to the Wordpress settings.
