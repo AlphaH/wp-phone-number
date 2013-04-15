@@ -91,10 +91,6 @@ class WP_Phone_Number {
 		$wppn_countries = wp_phone_number_get_countries();
 		$options = get_option( 'wp_phone_number_settings' );
 		$options['wp_phone_number_region'] = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : 'US';
-<<<<<<< HEAD
-=======
-		$options['wp_phone_number_region'] = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : '';
->>>>>>> 05d98a7bb93c88e1f839c5b13b093836d1dad8b7
 		echo '<select id="wp_phone_number_region" name="wp_phone_number_settings[wp_phone_number_region]">';
 		foreach( $wppn_countries as $country_code => $country ) {
 			$selected = ( $options['wp_phone_number_region'] === $country_code ) ? 'selected' : '';
