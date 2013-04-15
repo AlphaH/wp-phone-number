@@ -90,7 +90,7 @@ class WP_Phone_Number {
 		require_once plugin_dir_path( __FILE__ ) . '/includes/countries.php';
 		$wppn_countries = wp_phone_number_get_countries();
 		$options = get_option( 'wp_phone_number_settings' );
-		$options['wp_phone_number_region'] = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : '';
+		$options['wp_phone_number_region'] = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : 'US';
 		echo '<select id="wp_phone_number_region" name="wp_phone_number_settings[wp_phone_number_region]">';
 		foreach( $wppn_countries as $country_code => $country ) {
 			$selected = ( $options['wp_phone_number_region'] === $country_code ) ? 'selected' : '';
@@ -114,7 +114,7 @@ class WP_Phone_Number {
 		else
 			$format = PhoneNumberFormat::INTERNATIONAL;
 		$options = get_option( 'wp_phone_number_settings' );
-		$region = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : null;
+		$region = isset( $options['wp_phone_number_region'] ) ? $options['wp_phone_number_region'] : 'US';
 		?>
 		<select id="wp_phone_number_format" name="wp_phone_number_settings[wp_phone_number_format]">
 			<option <?php echo ( $format === PhoneNumberFormat::E164 ? 'selected' : '' ); ?> value="<?php echo PhoneNumberFormat::E164 ?>">E.164</option>
@@ -208,7 +208,7 @@ class WP_Phone_Number {
 			$input = ''; // this will throw an exception later, that will be caught just fine.
 		}
 		$options = get_option( 'wp_phone_number_settings' );
-		$region = isset($attributes['region']) ? strtoupper( $attributes['region'] ) : $options['wp_phone_number_region'];
+		$region = isset( $attributes['region'] ) ? strtoupper( $attributes['region'] ) : $options['wp_phone_number_region'];
 		if( isset( $attributes['format'] ) ) {
 			// Interpret the format attribute. If we can't, use the settings.
 			switch ( strtoupper( $attributes['format'] ) ) {
@@ -261,7 +261,7 @@ class WP_Phone_Number {
 	/**
 	 * Parse and format phone numbers
 	 */
-	private function format_phone_number( $input, $region = null, $formatting = PhoneNumberFormat::INTERNATIONAL, $linkify = true ) {
+	public function format_phone_number( $input, $region = null, $formatting = PhoneNumberFormat::INTERNATIONAL, $linkify = true ) {
 		$phone_util = PhoneNumberUtil::getInstance();
 		try {
 			$phone_nr_proto = $phone_util->parseAndKeepRawInput($input, $region);
@@ -324,3 +324,41 @@ class WP_Phone_Number {
 }
 
 $wp_phone_number = new WP_Phone_Number();
+
+// template tag for developers
+function wp_phone_number_parse( $input, $region = null, $format = null, $linkify = null ) {
+	$wp_phone_number = new WP_Phone_Number();
+	$options = get_option( 'wp_phone_number_settings' );
+	$region = !is_null( $region ) ? strtoupper( $region ) : $options['wp_phone_number_region'];
+	if( !is_null( $format ) ) {
+		// Interpret the format attribute. If we can't, use the settings.
+		switch ( strtoupper( $format ) ) {
+			case 'E164':
+			case 'E.164':
+				$format = PhoneNumberFormat::E164;
+				break;
+			case 'INT':
+			case 'INTERNATIONAL':
+				$format = PhoneNumberFormat::INTERNATIONAL;
+				break;
+			case 'DOMESTIC':
+			case 'NATIONAL':
+				$format = PhoneNumberFormat::NATIONAL;
+				break;
+			case 'RFC 3966':
+			case 'RFC-3966':
+			case 'RFC3966':
+				$format = PhoneNumberFormat::RFC3966;
+				break;
+			default:
+				$format = $options['wp_phone_number_format'];
+				break;
+		}
+	} else {
+		$format = $options['wp_phone_number_format'];
+	}
+	if ( !is_null( $linkify ) || !is_bool( $linkify ) )
+		$linkify = $options['wp_phone_number_linkify'];
+
+	return $wp_phone_number->format_phone_number( $input, $region, $format, $linkify );
+}
