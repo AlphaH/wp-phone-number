@@ -35,6 +35,12 @@ To turn your output into a link (or prevent it from turning into a link) overrid
 ```
 [phone linkify="true"]+31101234567[/phone]
 ```
+To display your output as an international phone number in the correct format for the viewer overriding the settings, add the `ooc` attribute to the shorcode like so:
+```
+
+[phone ooc="true"]0101234567[/phone]
+```
+
 Available input  (not case sensitive)
 * Yes: `YES` `TRUE` `1`
 * No: `NO` `FALSE` `0`
