@@ -84,6 +84,23 @@ class WP_Phone_Number {
 			'wp_phone_number',
 			'wp_phone_number_main'
 		);
+		add_settings_field(
+			'wp_phone_number_ooc_format',
+			'Display numbers in users out-of-country format.',
+			array( $this, 'create_ooc_field' ),
+			'wp_phone_number',
+			'wp_phone_number_main'
+		);
+
+
+	}
+
+	public function create_ooc_field() {
+		$options = get_option( 'wp_phone_number_settings' );
+		$options['wp_phone_number_ooc_format'] = isset ( $options['wp_phone_number_ooc_format'] ) ? $options['wp_phone_number_ooc_format'] : true;
+		?>
+		<input <?php echo ( $options['wp_phone_number_ooc_format'] ? 'checked' : '' ) ?> type="checkbox" name="wp_phone_number_settings[wp_phone_number_ooc_format]" value="true">
+		<?php _e( '(check to enable)', 'wp-phone-number' );
 	}
 
 	public function create_region_field() {
@@ -191,6 +208,10 @@ class WP_Phone_Number {
 		$linkify = $input['wp_phone_number_linkify'];
 		$linkify = ($linkify == 'true');
 		$input['wp_phone_number_linkify'] = $linkify;
+
+		$oocformat = $input['wp_phone_number_ooc_format'];
+		$oocformat = ($oocformat == 'true');
+		$input['wp_phone_number_ooc_format'] = $oocformat;
 		return $input;
 	}
 	
@@ -255,13 +276,32 @@ class WP_Phone_Number {
 		} else {
 			$linkify = $options['wp_phone_number_linkify'];
 		}
-		return $this->format_phone_number( $input, $region, $format, $linkify );
+		if ( isset( $attributes['ooc'] ) ) {
+			switch ( strtoupper( $attributes['ooc'] ) ) {
+				case 'YES':
+				case 'TRUE':
+				case '1':
+					$ooc = true;
+					break;
+				case 'NO':
+				case 'FALSE':
+				case '0':
+					$ooc = false;
+					break;
+				default:
+					$ooc = $options['wp_phone_number_ooc_format'];
+					break;
+			}
+		} else {
+			$ooc = $options['wp_phone_number_ooc_format'];
+		}
+		return $this->format_phone_number( $input, $region, $format, $linkify, $ooc );
 	}
 
 	/**
 	 * Parse and format phone numbers
 	 */
-	public function format_phone_number( $input, $region = null, $formatting = PhoneNumberFormat::INTERNATIONAL, $linkify = true ) {
+	public function format_phone_number( $input, $region = null, $formatting = PhoneNumberFormat::INTERNATIONAL, $linkify = true, $ooc = false ) {
 		$phone_util = PhoneNumberUtil::getInstance();
 		try {
 			$phone_nr_proto = $phone_util->parseAndKeepRawInput($input, $region);
@@ -274,16 +314,29 @@ class WP_Phone_Number {
 			return $input;
 		}
 		if( $linkify )
-			return $this->linkify_phone_number( $phone_util, $phone_nr_proto, $formatting );
+			if ( $ooc )
+				return $this->linkify_phone_number_out_of_country( $phone_util, $phone_nr_proto );
+			else
+				return $this->linkify_phone_number( $phone_util, $phone_nr_proto, $formatting );
 		else
 			return $phone_util->format( $phone_nr_proto, $formatting );
 	}
 
 	private function linkify_phone_number( $phone_util, $phone_nr_proto, $formatting ) {
 		return sprintf(
-			'<a class="phone_link" title="%1$s" href="%2$s">%1$s</a>',
+			'<a class="phone_link" title="%1$s" href="tel://%2$s">%1$s</a>',
 			$phone_util->format( $phone_nr_proto, $formatting ),
 			$phone_util->format( $phone_nr_proto, PhoneNumberFormat::E164 )
+		);
+	}
+
+	private function linkify_phone_number_out_of_country( $phone_util, $phone_nr_proto ) {
+		require_once plugin_dir_path( __FILE__ ) . '/includes/geoip.php';
+		$gi = geoip_open( plugin_dir_path( __FILE__ ) . '/includes/GeoIP.dat', GEOIP_STANDARD );
+		$location = geoip_country_code_by_addr( $gi, $_SERVER['REMOTE_ADDR'] );
+		return sprintf(
+			'<a class="phone_link" title="%1$s" href="tel://%1$s">%1$s</a>',
+			$phone_util->formatOutOfCountryCallingNumber( $phone_nr_proto, $location )
 		);
 	}
 
