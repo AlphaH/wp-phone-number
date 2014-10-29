@@ -37,7 +37,6 @@ To turn your output into a link (or prevent it from turning into a link) overrid
 ```
 This plugin supports visitor country detection to determine whether a phone number should be shown in domestic or international format. To enable this feature, add the `ooc` attribute, like so:
 ```
-
 [phone ooc="true"]0101234567[/phone]
 ```
 
