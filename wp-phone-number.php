@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name:    WP Phone Number
-Plugin URI:     https://github.com/A7M2/wp-phone-number
+Plugin URI:     https://github.com/kokone/wp-phone-number
 Description:    This plugin allows you to insert formatted and validated phone number links into posts and pages with extreme ease.
 Version:        1.0
 Author:         Nathaniel Williams
