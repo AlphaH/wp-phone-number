@@ -8,6 +8,8 @@ Author:         Nathaniel Williams
 Author URI:     http://coios.net/
 Author Email:   nathaniel.williams@coios.net
 License:        MIT
+
+Major Contributor: Christopher Houghton (osofantasti.co)
 */
 
 use com\google\i18n\phonenumbers\PhoneNumberUtil;
